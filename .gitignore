@@ -1,0 +1,10 @@
+# Ignore all the subdirs inside build/, except bin/
+# build/*: Ignores all subdirectories inside build/.
+# !build/bin/: Excludes the bin/ directory from the previous rule.
+build/*
+!build/bin/
+
+
+
+# If toy-compiler bin also cross the github filesize limit, we have to ignore it too
+# build/bin/toy-compiler
