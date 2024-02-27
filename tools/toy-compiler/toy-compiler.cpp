@@ -17,9 +17,50 @@
 
 
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/ErrorOr.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <memory>
+#include <string>
+#include <system_error>
+
+
+
+using namespace toy;
+namespace cl = llvm::cl;
+
+
+
+/// our compiler take an input filename (i.e. filename.toy).
+/// Check how below code snippet works from how_llvm_utilities_work.md
+static cl::opt<std::string> inputFilename(
+
+    "input",
+    cl::desc("<input toy file>"),
+    cl::init("-"),
+    cl::value_desc("filename")
+
+
+);
+
+
+
+
+
 /// Driver or Entry point for checking Lexer
-int main() {
+int main(int argc, char **argv) {
+
+
+    // Parse the command line arguments & flags
+    cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
+
     
+    auto testData = parseInputFile(inputFilename);
+
+
     /// Input string for testing
     std::string testData = "def foo(x) {\n return x + 1;\n}\nvar y = foo(5);";
     
@@ -40,26 +81,26 @@ int main() {
 
 
     /// Test1: Check how getNextChar() working
-    // int ch;
-    // ch = lexer.getNextChar();
+    int ch;
+    ch = lexer.getNextChar();
 
 
-    // while (ch != EOF) {
+    while (ch != EOF) {
         
-    //     if (ch == '\n') {
+        if (ch == '\n') {
 
-    //         std::cout << std::endl;
-    //     }
+            std::cout << std::endl;
+        }
 
-    //     /// Prints each character
-    //     std::cout <<"ch:"<< static_cast<char>(ch) << std::endl;
+        /// Prints each character
+        std::cout <<"ch:"<< static_cast<char>(ch) << std::endl;
 
 
-    //     /// Reads each character
-    //     ch = lexer.getNextChar();
+        /// Reads each character
+        ch = lexer.getNextChar();
     
 
-    // }
+    }
 
 
     /// Test2: Check how getTok() working
