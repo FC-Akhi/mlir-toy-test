@@ -11,11 +11,10 @@
 //===----------------------------------------------------------------------===//
 
 
-
-//  Calling "Lexer.h".
-#include "include/toy-analysis-parser/Lexer.h"
-
-
+// "Parser.h" is calling "AST.h"
+// "AST.h" is calling "Lexer.h"
+// "Lexer.h" is top and calling no one.
+#include "toy-analysis-parser/Parser.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
@@ -27,154 +26,79 @@
 #include <string>
 #include <system_error>
 
-
-
 using namespace toy;
 namespace cl = llvm::cl;
 
 
-
 /// our compiler take an input filename (i.e. filename.toy).
-/// Check how below code snippet works from how_llvm_utilities_work.md
 static cl::opt<std::string> inputFilename(
-
-    "input",
+    cl::Positional,
     cl::desc("<input toy file>"),
     cl::init("-"),
     cl::value_desc("filename")
-
-
 );
 
 
+namespace {
+enum Action { None, DumpAST };
+} // namespace
+
+/// This declaration defines a variable “emitAction” of the “Action” enum type.
+/// For more - https://llvm.org/docs/CommandLine.html#selecting-an-alternative-from-a-set-of-possibilities
+static cl::opt<enum Action> emitAction(
+    "emit",
+    cl::desc("Select the kind of output desired"),
+    cl::values(
+        clEnumValN(DumpAST, "ast", "output the AST dump")
+    )
+);
+
+
+/// Returns a Toy AST resulting from parsing the file or a nullptr on error.
+std::unique_ptr<toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
+    
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr =
+        llvm::MemoryBuffer::getFileOrSTDIN(filename);
+    
+    if (std::error_code ec = fileOrErr.getError()) {
+        llvm::errs() << "Could not open input file: " << ec.message() << "\n";
+        return nullptr;
+    }
+
+    auto buffer = fileOrErr.get()->getBuffer();
+    LexerBuffer lexer(buffer.begin(), buffer.end(), std::string(filename));
+    Parser parser(lexer);
+    
+    return parser.parseModule();
+}
 
 
 
-/// Driver or Entry point for checking Lexer
+
 int main(int argc, char **argv) {
-
 
     // Parse the command line arguments & flags
     cl::ParseCommandLineOptions(argc, argv, "toy compiler\n");
-
     
-    auto testData = parseInputFile(inputFilename);
-
-
-    /// Input string for testing
-    std::string testData = "def foo(x) {\n return x + 1;\n}\nvar y = foo(5);";
+    // Parse code file (i.e. code into LLVM module)
+    // Lexer & Parser are called inside
+    auto moduleAST = parseInputFile(inputFilename);
     
 
-    /// Instantiate object of LexerBuffer
-    toy::LexerBuffer lexer("testData", &*testData.begin(), &*testData.end());
+    if (!moduleAST)
+        return 1;
 
 
-    /// Print input string
-    std::cout << "Input string" << std::endl;
-    std::cout << testData << std::endl;
+    switch (emitAction) {
 
-
-    ///======================
-    /// If you want to test how lexer reads character by character, then uncomment Test1 and comment out Test2
-    /// If you want to test how lexer tokenize, then uncomment Test1 and comment out Test1
-    ///======================
-
-
-    /// Test1: Check how getNextChar() working
-    int ch;
-    ch = lexer.getNextChar();
-
-
-    while (ch != EOF) {
+        // Then Dump the AST, if -emit=ast argument is passed
+        case Action::DumpAST:
+            dump(*moduleAST);
+            return 0;
         
-        if (ch == '\n') {
-
-            std::cout << std::endl;
-        }
-
-        /// Prints each character
-        std::cout <<"ch:"<< static_cast<char>(ch) << std::endl;
-
-
-        /// Reads each character
-        ch = lexer.getNextChar();
-    
-
+        default:
+            llvm::errs() << "No action specified (parsing only?), use -emit=<action>\n";
     }
 
-
-    /// Test2: Check how getTok() working
-    toy::Token token;
-    
-
-    // Repeatedly call getNextToken until EOF token is reached
-    do {
-        token = lexer.getNextToken(); // Get the next token
-
-        // Output the type of token and any associated value
-        switch(token) {
-
-            case toy::TK_def:
-                
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: def" << std::endl;
-
-                break;
-            
-            case toy::TK_return:
-
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: return" << std::endl;
-                
-                break;
-            
-            case toy::TK_var:
-
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: var" << std::endl;
-                
-                break;
-            
-            case toy::TK_identifier:
-
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: Identifier (" << lexer.getIdentifier().str() << ")" << std::endl;
-                
-                break;
-            
-            case toy::TK_number:
-
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: Number (" << lexer.getValue() << ")" << std::endl;
-                
-                break;
-            
-            case toy::TK_eof:
-
-                std::cout << "Line number: " << lexer.lastLocation.line;
-                std::cout << " Token: EOF" << std::endl;
-                
-                break;
-            
-            default:
-                
-                // If the token is a single character (e.g., ';', '{', '}')
-                if(token > 0) {
-                    
-                    std::cout << "Line number: " << lexer.lastLocation.line;
-                    std::cout << " Token: " << static_cast<char>(token) << std::endl;
-                
-                }
-                
-                break;
-
-        }
-
-
-    } while(token != toy::TK_eof);
-
-
     return 0;
-
-
 }
