@@ -19,6 +19,14 @@
 #include "toy-analysis-parser/Lexer.h"
 
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Casting.h"
+#include <utility>
+#include <vector>
+#include <optional>
+
+
 namespace toy {
 
 
@@ -160,7 +168,7 @@ namespace toy {
 		}
 
 
-	}
+	};
 
 
 
@@ -192,7 +200,7 @@ namespace toy {
 		}
 
 
-	}
+	};
 
 
 
@@ -240,7 +248,7 @@ namespace toy {
 		}
 
 
-	}
+	};
 
 
 
@@ -334,7 +342,7 @@ namespace toy {
 	/// Expression class for function calls
 	class CallExprAst : public ExprAst {
 
-		std::string callee,
+		std::string callee;
 		std::vector<std::unique_ptr<ExprAst>> args;
 
 
@@ -374,7 +382,7 @@ namespace toy {
 	/// Expression class for builtin print calls
 	class PrintExprAst : public ExprAst {
 
-		std::unique_ptr<ExprAst> args;
+		std::unique_ptr<ExprAst> arg;
 
 
 	public:
@@ -464,7 +472,7 @@ namespace toy {
 		}
 
 
-		PrototypeAst *getBody() {
+		ExprAstList *getBody() {
 
 			return body.get();
 

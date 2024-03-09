@@ -116,9 +116,9 @@ static std::string loc(T *node) {
 
 /// Helper Macro to bump the indentation level and print the leading spaces for
 /// the current indentations
-#define INDENT()
-	Indent level_(curIndent); \
-	indent();                 \
+#define INDENT()                                                               \
+    Indent level_(curIndent);                                                  \
+    indent();
 
 
 
@@ -198,13 +198,13 @@ void printLitHelper(ExprAst *litOrNum) {
 
 	/// Print the dimension for this literal first
 	llvm::errs() << "<";
-	llvm::interLeaveComma(literal->getDims(), llvm::errs());
+	llvm::interleaveComma(literal->getDims(), llvm::errs());
 	llvm::errs() << ">";
 
 
 	/// Now print the content, recursing on every element of the list
 	llvm::errs() << "[";
-	llvm::interLeaveComma(literal->getValues(), llvm::errs(), [&](auto &elt) {
+	llvm::interleaveComma(literal->getValues(), llvm::errs(), [&](auto &elt) {
 		
 		printLitHelper(elt.get());
 
@@ -294,7 +294,7 @@ void AstDumper::dump(PrintExprAst *node) {
 	llvm::errs() << "Print [ " << loc(node) << "\n";
 	dump(node->getArg());
 	indent();
-	llvm::errs() << "]\n"
+	llvm::errs() << "]\n";
 
 }
 
@@ -304,7 +304,7 @@ void AstDumper::dump(PrintExprAst *node) {
 void AstDumper::dump(const VarType &type) {
 
 	llvm::errs() << "<";
-	llvm::interLeaveComma(type.shape, llvm::errs());
+	llvm::interleaveComma(type.shape, llvm::errs());
 	llvm::errs() << ">";
 
 }
@@ -319,7 +319,7 @@ void AstDumper::dump(PrototypeAst *node) {
 	llvm::errs() << "Proto '" << node->getName() << "' " << loc(node) << "\n";
 	indent();
 	llvm::errs() << "Params: [";
-	llvm::interLeaveComma(node->getArgs(), llvm::errs(), [](auto &arg) {
+	llvm::interleaveComma(node->getArgs(), llvm::errs(), [](auto &arg) {
 
 		llvm::errs() << arg->getName();
  
@@ -335,10 +335,10 @@ void AstDumper::dump(PrototypeAst *node) {
 void AstDumper::dump(FunctionAst *node) {
 
 	INDENT()
-	llvm::errs() << "Module:\n";
+	llvm::errs() << "Function:\n";
 	
-	for (auto &f : *node)
-		dump(&f); 
+	dump(node->getProto());
+    dump(node->getBody()); 
 
 }
 

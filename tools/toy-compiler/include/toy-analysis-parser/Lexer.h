@@ -118,6 +118,8 @@ namespace toy {
 
 			assert(tok == curTok && "consume Token mismatch expectation");
 
+			printf("After assert\n");
+
 			getNextToken();
 
 		}
@@ -171,7 +173,7 @@ namespace toy {
 		}
 
 
-	// private:
+	///private:
 
 
 		std::string identifierStr;  // Stores the last parsed identifier
@@ -248,11 +250,14 @@ namespace toy {
 		/// Tokenizes the input stream
 		Token getTok() {
 
+			printf("1.lastChar: %d\n", lastChar);
 
 			// Skip any whitespace
-			while (isspace(lastChar))
+			while (isspace(lastChar)) {
 
 				lastChar = Token(getNextChar());
+				printf("2. lastChar: %d\n", lastChar);
+			}
 
 
 			lastLocation.line = curLineNum;
@@ -284,10 +289,14 @@ namespace toy {
 
 				identifierStr = (char)lastChar;
 
+				printf("identifierStr: %s\n", identifierStr.c_str());
 
-				while (isalnum((lastChar = Token(getNextChar()))) || lastChar == '_')
+				while (isalnum((lastChar = Token(getNextChar()))) || lastChar == '_') {
 
 					identifierStr += (char)lastChar;
+
+					printf("identifierStr: %s\n", identifierStr.c_str());
+				}
 
 				if (identifierStr == "return")
 
@@ -350,8 +359,8 @@ namespace toy {
 
 
 		/// Constructor initializes the LexerBuffer with a filename and start and end of the string or file
-		LexerBuffer(std::string filename, const char *begin, const char *end)
-			: Lexer(std::move(filename)), current(begin), end(end) {}
+		LexerBuffer(const char *begin, const char *end, std::string filename)
+        			: Lexer(std::move(filename)), current(begin), end(end) {}
 
 
 	private:

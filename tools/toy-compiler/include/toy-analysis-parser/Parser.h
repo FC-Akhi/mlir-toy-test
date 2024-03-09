@@ -47,9 +47,13 @@ namespace toy {
 
 			lexer.getNextToken(); /// prime the lexer
 
+			printf("0.lastChar:%d\n", lexer.lastChar);
+
+			printf("0.curToken:%d\n", lexer.getCurToken());
 
 			/// Parse functions one at a time and accumulate in this vector
 			std::vector<FunctionAst> functions;
+
 			while (auto f = parseDefinition()) {
 
 				functions.push_back(std::move(*f));
@@ -77,29 +81,31 @@ namespace toy {
 		Lexer &lexer;
 
 
-		/// Parse a return statement
-		/// return := return ; | return expr ;
-		std::unique_ptr<ReturnExprAst> parseReturn() {
 
-			auto loc = lexer.getLastLocation();
-			lexer.consume(TK_eof);
+		/// Helper function to signal errors while parsing, it takes an argument
+    	/// indicating the expected token and another argument giving more context.
+   		/// Location is retrieved from the lexer to enrich the error message.
+    	template <typename R, typename T, typename U = const char *>
 
+    	std::unique_ptr<R> parseError(T &&expected, U &&context = "") {
 
-			/// return takes an optional argument
-			std::optional<std::unique_ptr<ExprAst>> expr;
-			if (lexer.getCurToken() != ';') {
+    		auto curToken = lexer.getCurToken();
 
-				expr = parseExpression();
-
-				if (!expr)
-
-					return nullptr;
-			}
+    		llvm::errs() << "Parse error (" << lexer.getLastLocation().line << ", "
+    					 << lexer.getLastLocation().col << "): expected '" << expected
+    					 << "' " << context << "but has Token" << curToken;
 
 
-			return std::make_unique<ReturnExprAst>(std::move(loc), std::move(expr));
+    		if (isprint(curToken))
 
-		}
+    			llvm::errs() << " '" << (char)curToken << "'";
+
+    		llvm::errs() << "\n";
+
+    		return nullptr;
+
+
+    	}
 
 
 
@@ -112,9 +118,101 @@ namespace toy {
 
 			lexer.consume(TK_number);
 
-			return std::move(result)
+			return std::move(result);
 
 		}
+
+
+
+		/// identifierexpr
+    	///   ::= identifier
+    	///   ::= identifier '(' expression ')'
+		std::unique_ptr<ExprAst> parseIdentifierExpr() {
+
+			std::string name(lexer.getIdentifier());
+
+
+			auto loc = lexer.getLastLocation();
+			lexer.getNextToken(); ///eat identifier
+
+			if (lexer.getCurToken() != '(') // simple variable ref
+
+				return std::make_unique<VariableExprAst>(std::move(loc), name);
+
+			/// This is function call
+			lexer.consume(Token('('));
+
+			std::vector<std::unique_ptr<ExprAst>> args;
+
+			if (lexer.getCurToken() != ')') {
+
+				while (true) {
+
+					if (auto arg = parseExpression())
+
+						args.push_back(std::move(arg));
+
+					else
+
+						return nullptr;
+
+					if (lexer.getCurToken() == ')')
+
+						break;
+
+					if (lexer.getCurToken() != ',')
+
+						return parseError<ExprAst>(", or )", "in argument list");
+
+					lexer.getNextToken();
+				}
+
+			}
+
+			lexer.consume(Token(')'));
+
+
+			/// It can be builtin call to print
+			if (name == "print") {
+
+				if (args.size() != 1)
+
+					return parseError<ExprAst>("<single arg>", "as argument to print()");
+
+				return std::make_unique<PrintExprAst>(std::move(loc), std::move(args[0]));
+
+			}
+
+
+			/// Call to a user-defined function
+			return std::make_unique<CallExprAst>(std::move(loc), name, std::move(args));
+
+
+		}
+
+
+
+    	/// parenexpr ::= '(' expression ')'
+		std::unique_ptr<ExprAst> parseParenExpr() {
+
+			lexer.getNextToken(); /// eat
+
+			auto v = parseExpression();
+
+			if (!v)
+
+				return nullptr;
+
+			if (lexer.getCurToken() != ')')
+
+				return parseError<ExprAst>(")", "to close expression with parentheses");
+
+			lexer.consume(Token(')'));
+
+			return v;
+
+		}
+
 
 
 
@@ -226,104 +324,12 @@ namespace toy {
 
 			}
 
-			return std::make_unique<LiteralExprAst>(std::move(loc), std::move(values), std::move(dims))
+			return std::make_unique<LiteralExprAst>(std::move(loc), std::move(values), std::move(dims));
 
 
 
 
 		}
-
-
-
-		/// parenexpr ::= '(' expression ')'
-		std::unique_ptr<ExprAst> parseParenExpr() {
-
-			lexer.getNextToken(); /// eat
-
-			auto v = parseExpression();
-
-			if (!v)
-
-				return nullptr;
-
-			if (lexer.getCurToken() != ')')
-
-				return parseError<ExprAst>(")", "to close expression with parentheses");
-
-			lexer.consume(Token(')'));
-
-			return v;
-
-		}
-
-
-
-		/// identifierexpr
-    	///   ::= identifier
-    	///   ::= identifier '(' expression ')'
-		std::unique_ptr<ExprAst> parseIdentifierExpr() {
-
-			std::string name(lexer.getId());
-
-
-			auto loc = lexer.getLastLocation();
-			lexer.getNextToken(); ///eat identifier
-
-			if (lexer.getCurToken() != '(') // simple variable ref
-
-				return std::make_unique<VariableExprAst>(std::move(loc), name);
-
-			/// This is function call
-			lexer.consume(Token('('));
-
-			std::vector<std::unique_ptr<ExprAst>> args;
-
-			if (lexer.getCurToken() != ')') {
-
-				while (true) {
-
-					if (auto arg = parseExpression())
-
-						args.push_back(std::move(arg));
-
-					else
-
-						return nullptr;
-
-					if (lexer.getCurToken() == ')')
-
-						break;
-
-					if (lexer.getCurToken() != ',')
-
-						return parseError<ExprAst>(", or )", "in argument list");
-
-					lexer.getNextToken();
-				}
-
-			}
-
-			lexer.consume(Token(')'));
-
-
-			/// It can be builtin call to print
-			if (name == "print") {
-
-				if (args.size() != 1)
-
-					return parseError<ExprAst>("<single arg>", "as argument to print()");
-
-				return std::make_unique<printExprAst>(std::move(loc), std::move(args[0]));
-
-			}
-
-
-			/// Call to a user-defined function
-			return std::make_unique<CallExprAst>(std::move(loc), std::move(args[0]));
-
-
-		}
-
 
 
 		/// primary
@@ -337,22 +343,22 @@ namespace toy {
     		switch (lexer.getCurToken()) {
 
 
-    		case TK_number;
+    		case TK_number:
 
     			return parseNumberExpr();
 
 
-    		case TK_identifier;
+    		case TK_identifier:
 
     			return parseIdentifierExpr();
 
 
-    		case '(';
+    		case '(':
 
     			return parseParenExpr();
 
 
-    		case '[';
+    		case '[':
 
     			return parseTensorLiteralExpr();
 
@@ -362,7 +368,7 @@ namespace toy {
     			return nullptr;
 
 
-    		case ';';
+    		case ';':
 
     			return nullptr;
 
@@ -382,7 +388,47 @@ namespace toy {
 
 
 
-    	/// Recursively parse the right hand side of a binary expression, the ExprPrec
+
+    	
+
+
+		/// Get the precedence of the pending binary operator token.
+    	int getTokPrecedence() {
+
+    		if (!isascii(lexer.getCurToken()))
+
+    			return -1;
+
+    		/// -1 is the lowest precedence
+    		switch (static_cast<char>(lexer.getCurToken())) {
+
+    		case '-':
+
+    			return 20;
+
+    		case '+':
+
+    			return 20;
+
+
+    		case '*':
+
+    			return 40;
+
+
+    		default:
+
+    			return -1;
+
+    		}
+
+    	}
+
+
+	
+
+
+		/// Recursively parse the right hand side of a binary expression, the ExprPrec
     	/// argument indicates the precedence of the current binary operator.
     	///
     	/// binoprhs ::= ('+' primary)*
@@ -454,8 +500,37 @@ namespace toy {
 
 
 
+
+		/// Parse a return statement
+		/// return := return ; | return expression ;
+		std::unique_ptr<ReturnExprAst> parseReturn() {
+
+			auto loc = lexer.getLastLocation();
+			lexer.consume(TK_eof);
+
+
+			/// return takes an optional argument
+			std::optional<std::unique_ptr<ExprAst>> expr;
+			if (lexer.getCurToken() != ';') {
+
+				expr = parseExpression();
+
+				if (!expr)
+
+					return nullptr;
+			}
+
+
+			return std::make_unique<ReturnExprAst>(std::move(loc), std::move(expr));
+
+		}
+
+
+
+		
+
     	/// type ::= < shape_list >
-    	/// shape_list ::= num | num , shape_list
+    	/// shape_list ::= number | number , shape_list
     	std::unique_ptr<VarType> parseType() {
 
     		if (lexer.getCurToken() != '<')
@@ -499,7 +574,7 @@ namespace toy {
     	/// Parse a variable declaration, it starts with a `var` keyword followed by
     	/// and identifier and an optional type (shape specification) before the
     	/// initializer.
-    	/// decl ::= var identifier [ type ] = expr
+    	/// decl ::= var identifier [ type ] = expression
     	std::unique_ptr<VarDeclExprAst> parseDeclaration() {
 
     		if (lexer.getCurToken() != TK_var)
@@ -514,7 +589,7 @@ namespace toy {
 
     			return parseError<VarDeclExprAst>("identified", "after 'var' declaration");
 
-    		std::string if(lexer.getId());
+    		std::string id(lexer.getIdentifier());
 
     		lexer.getNextToken(); /// eat Id
 
@@ -550,7 +625,7 @@ namespace toy {
 	    ///
 	    /// block ::= { expression_list }
 	    /// expression_list ::= block_expr ; expression_list
-	    /// block_expr ::= decl | "return" | expr
+	    /// block_expr ::= decl | "return" | expression
     	std::unique_ptr<ExprAstList> parseBlock() {
 
     		if (lexer.getCurToken() != '{')
@@ -636,35 +711,51 @@ namespace toy {
 
     		auto loc = lexer.getLastLocation();
 
-    		if (lexer.getCurToken() != TK_def)
+
+    		if (lexer.getCurToken() != TK_def) {
+
+    			printf("1CurToken: %d\n", lexer.getCurToken());
 
     			return parseError<PrototypeAst>("def", "in prototype");
 
+    		}
+
+    		printf("2CurToken: %d\n", lexer.getCurToken());
     		lexer.consume(TK_eof);
 
 
-    		if (lexer.getCurToken() != TK_identifier)
+
+    		if (lexer.getCurToken() != TK_identifier) {
+
+    			printf("Inside 2nd if======\n");
 
     			return parseError<PrototypeAst>("function name", "in prototype");
 
-    		std::string fnName(lexer.getId());
+    		}
+
+    		std::string fnName(lexer.getIdentifier());
 
     		lexer.consume(TK_identifier);
+
+
 
     		if (lexer.getCurToken() != '(')
 
     			return parseError<PrototypeAst>("(", "in prototype");
+
+    		
 
     		lexer.consume(Token('('));
 
     		std::vector<std::unique_ptr<VariableExprAst>> args;
 
 
+    		
     		if (lexer.getCurToken() != ')') {
 
     			do {
 
-    				std::string name(lexer.getId());
+    				std::string name(lexer.getIdentifier());
 
     				auto loc = lexer.getLastLocation();
     				lexer.consume(TK_identifier);
@@ -687,13 +778,19 @@ namespace toy {
 
     		}
 
+    		
+
     		if (lexer.getCurToken() != ')')
 
     			return parseError<PrototypeAst>(")", "to end function prototype");
 
 
+    		
+
     		/// success
     		lexer.consume(Token(')'));
+
+    		
 
     		return std::make_unique<PrototypeAst>(std::move(loc), fnName, std::move(args)); 
 
@@ -729,68 +826,8 @@ namespace toy {
     	}
 
 
-
-    	/// Get the precedence of the pending binary operator token.
-    	int getTokPrecedence() {
-
-    		if (!isascii(lexer.getCurToken()))
-
-    			return -1;
-
-    		/// -1 is the lowest precedence
-    		switch (static_cast<char>(lexer.getCurToken())) {
-
-    		case '-':
-
-    			return 20;
-
-    		case '+':
-
-    			return 20;
-
-
-    		case '*':
-
-    			return 40;
-
-
-    		default:
-
-    			return -1;
-
-    		}
-
-    	}
-
-
-
-    	/// Helper function to signal errors while parsing, it takes an argument
-    	/// indicating the expected token and another argument giving more context.
-   		/// Location is retrieved from the lexer to enrich the error message.
-    	template <typename R, typename T, typename U = const char *>
-
-    	std::unique_ptr<R> parseError(T &&expected, U &&context = "") {
-
-    		auto curToken = lexer.getCurToken();
-
-    		llvm::errs() << "Parse error (" << lexer.getLastLocation().line << ", "
-    					 << lexer.getLastLocation().col << "): expected '" << expected
-    					 << "' " << context << "but has Token" << curToken;
-
-
-    		if (isprint(curToken))
-
-    			llvm::errs() << " '" << (char)curToken << "'";
-
-    		llvm::errs() << "\n";
-
-    		return nullptr;
-
-
-    	}
-
-
-	};
+    };
+    	
 
 
 
