@@ -40,17 +40,21 @@ static cl::opt<std::string> inputFilename(
 
 
 namespace {
-enum Action { None, DumpAST };
+    
+    enum Action { None, DumpAST };
+
 } // namespace
 
 /// This declaration defines a variable “emitAction” of the “Action” enum type.
 /// For more - https://llvm.org/docs/CommandLine.html#selecting-an-alternative-from-a-set-of-possibilities
 static cl::opt<enum Action> emitAction(
-    "emit",
-    cl::desc("Select the kind of output desired"),
-    cl::values(
-        clEnumValN(DumpAST, "ast", "output the AST dump")
+        
+        "emit",
+        cl::desc("Select the kind of output desired"),
+        cl::values(clEnumValN(DumpAST, "ast", "output the AST dump")
+
     )
+
 );
 
 

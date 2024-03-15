@@ -144,9 +144,17 @@ void AstDumper::dump(ExprAst *expr) {
 void AstDumper::dump(VarDeclExprAst *varDecl) {
 
 	INDENT();
+	
+
 	llvm::errs() << "VarDecl " << varDecl->getName();
+	
+
 	dump(varDecl->getType());
+	
+
 	llvm::errs() << " " << loc(varDecl) << "\n";
+	
+
 	dump(varDecl->getInitVal());
 
 }
@@ -157,11 +165,17 @@ void AstDumper::dump(VarDeclExprAst *varDecl) {
 void AstDumper::dump(ExprAstList *exprList) {
 
 	INDENT();
+	
+
 	llvm::errs() << "Block {\n";
+	
+
 	for (auto &expr : *exprList)
 		dump(expr.get());
 
 	indent();
+	
+
 	llvm::errs() << "} // Block\n";
 
 }
@@ -276,11 +290,17 @@ void AstDumper::dump(BinaryExprAst *node) {
 void AstDumper::dump(CallExprAst *node) {
 
 	INDENT();
+	
+
 	llvm::errs() << "Call '" << node->getCallee() << "'' [ " << loc(node) << "\n";
+	
+
 	for (auto &arg : node->getArgs())
 		dump(arg.get());
 
 	indent();
+	
+
 	llvm::errs() << "]\n"; 
 
 }
@@ -316,8 +336,14 @@ void AstDumper::dump(const VarType &type) {
 void AstDumper::dump(PrototypeAst *node) {
 
 	INDENT();
+
+
 	llvm::errs() << "Proto '" << node->getName() << "' " << loc(node) << "\n";
+	
+
 	indent();
+	
+
 	llvm::errs() << "Params: [";
 	llvm::interleaveComma(node->getArgs(), llvm::errs(), [](auto &arg) {
 
@@ -334,9 +360,15 @@ void AstDumper::dump(PrototypeAst *node) {
 /// Print a function, first the prototype and then the body
 void AstDumper::dump(FunctionAst *node) {
 
+
+	/// There's a macro or a function called INDENT being called, 
+	/// which probably manages indentation levels for pretty-printing the AST structure. 
 	INDENT()
+
+
 	llvm::errs() << "Function:\n";
 	
+
 	dump(node->getProto());
     dump(node->getBody()); 
 
@@ -347,8 +379,18 @@ void AstDumper::dump(FunctionAst *node) {
 /// Print a module, actually loop over the functions and print them in sequence
 void AstDumper::dump(ModuleAst *node) {
 
+
+	/// There's a macro or a function called INDENT being called, 
+	/// which probably manages indentation levels for pretty-printing the AST structure. 
 	INDENT();
+
+
 	llvm::errs() << "Module:\n";
+
+
+	/// This loop iterates over all the functions 
+	/// (or possibly other constructs) contained 
+	/// within the module pointed to by node.
 	for (auto &f : *node)
 		dump(&f);
 

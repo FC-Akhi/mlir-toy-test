@@ -511,6 +511,9 @@ namespace toy {
 
 			/// return takes an optional argument
 			std::optional<std::unique_ptr<ExprAst>> expr;
+
+
+			
 			if (lexer.getCurToken() != ';') {
 
 				expr = parseExpression();
@@ -642,8 +645,16 @@ namespace toy {
 
     			lexer.consume(Token(';'));
 
+
+    		/// Checks if current token is not eof or it is '}'. Which means end of function
     		while (lexer.getCurToken() != '}' && lexer.getCurToken() != TK_eof) {
 
+
+    			/// If above condition of while is true that means we are still inside function
+    			/// If we are still inside function that means there could be first case
+    			/// current token could be variable declaration
+    			/// For example: var a = 2 + 3;
+    			/// Below part will take care of var a only
     			if (lexer.getCurToken() == TK_var) {
 
     				/// Variable declaration
@@ -655,7 +666,12 @@ namespace toy {
 
     				exprList->push_back(std::move(varDecl));
 
-    			} else if (lexer.getCurToken() == TK_return) {
+    			} 
+
+
+    			/// If we are still inside function that means there could be second case
+    			/// current token could be return
+    			else if (lexer.getCurToken() == TK_return) {
 
     				/// Return statement
     				auto ret = parseReturn();
@@ -666,7 +682,14 @@ namespace toy {
 
     				exprList->push_back(std::move(ret));
 
-    			} else {
+    			} 
+
+
+    			/// If we are still inside function that means there could be third case
+    			/// current token could be general expression
+    			/// For example: var a = 2 + 3;
+    			/// Below part will take care of 2 + 3 only
+    			else {
 
     				/// General expression
     				auto expr = parseExpression();
@@ -807,23 +830,23 @@ namespace toy {
 	    ///
 	    /// definition ::= prototype block
     	std::unique_ptr<FunctionAst> parseDefinition() {
+		    
+		    auto proto = parsePrototype();
+		    
+		    
+		    if (proto) {
+		    	
+		    	auto block = parseBlock();
 
-    		auto proto = parsePrototype();
+		        if (block)
+		    
+		            return std::make_unique<FunctionAst>(std::move(proto), std::move(block));
+		    
+		    }
+		    
 
-    		if (!proto)
-
-    			return nullptr;
-
-
-    		if (auto block = parseBlock())
-
-    			return std::make_unique<FunctionAst>(std::move(proto), std::move(block));
-
-    		return nullptr;	
-    		
-
-
-    	}
+		    return nullptr;
+		}
 
 
     };

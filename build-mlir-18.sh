@@ -1,7 +1,7 @@
 # My Desktop
 # export LLVM_PROJECT_ROOT=$MY_EXTERNAL_SDD_WORK_DIR/compiler-projects/llvm-18-src-build
 # My Laptop
-export LLVM_PROJECT_ROOT=$HOME/compiler-projects/llvm-18-src-build
+# export LLVM_PROJECT_ROOT=$HOME/compiler-projects/llvm-18-src-build
 # Add your $LLVM_PROJECT_ROOT path
 # export LLVM_PROJECT_ROOT=
 
@@ -15,6 +15,7 @@ rm -R build/
 mkdir -p build
 cd build/
 
+# We pass all flags while making the make file using cmake
 cmake   \
     -G Ninja    \
     -S ../  \
@@ -30,13 +31,10 @@ cmake   \
 
 
 
-# We need this
+# We need this because after generating make files all the necessary files will be loaded in build diretory
+# But below command says to start generating final executable of the project
 cmake --build . --target toy-compiler
 
-# We donot need them anymore
-# cmake --build . --target standalone-opt
-# cmake --build . --target standalone-translate
-# cmake --build . --target mlir-doc
 
 
 
