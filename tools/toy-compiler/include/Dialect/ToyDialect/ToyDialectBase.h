@@ -14,14 +14,13 @@
 #ifndef TOY_DIALECT_H_
 #define TOY_DIALECT_H_
 
-/// In, "ToyDialectBase.h.inc", "ToyDialect" class is created from "public ::mlir::Dialect" class.
-/// So you need it
+
 #include "mlir/IR/Dialect.h"
 
 
 /// Include the auto-generated header file containing the declaration of the toy dialect.
-/// You will find it in "build/tools/include/Dialect/ToyDialect/" dir
 #include "Dialect/ToyDialect/ToyDialectBase.h.inc"
+
 
 
 

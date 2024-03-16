@@ -1,7 +1,7 @@
 # My Desktop
 # export LLVM_PROJECT_ROOT=$MY_EXTERNAL_SDD_WORK_DIR/compiler-projects/llvm-18-src-build
 # My Laptop
-export LLVM_PROJECT_ROOT=$HOME/compiler-projects/llvm-18-src-build
+# export LLVM_PROJECT_ROOT=$HOME/compiler-projects/llvm-18-src-build
 # Add your $LLVM_PROJECT_ROOT path
 # export LLVM_PROJECT_ROOT=
 
@@ -15,6 +15,7 @@ rm -R build/
 mkdir -p build
 cd build/
 
+# Generate your make file
 cmake   \
     -G Ninja    \
     -S ../  \
@@ -32,7 +33,6 @@ cmake   \
 
 # We need this
 cmake --build . --target toy-compiler
-cmake --build . --target mlir-doc
 
 # We donot need them anymore
 # cmake --build . --target standalone-opt

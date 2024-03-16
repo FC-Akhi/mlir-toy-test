@@ -40,33 +40,41 @@ static cl::opt<std::string> inputFilename(
 
 
 namespace {
-enum Action { None, DumpAST };
+    
+    enum Action { None, DumpAST };
+
 } // namespace
 
 /// This declaration defines a variable “emitAction” of the “Action” enum type.
 /// For more - https://llvm.org/docs/CommandLine.html#selecting-an-alternative-from-a-set-of-possibilities
 static cl::opt<enum Action> emitAction(
-    "emit",
-    cl::desc("Select the kind of output desired"),
-    cl::values(
-        clEnumValN(DumpAST, "ast", "output the AST dump")
+        
+        "emit",
+        cl::desc("Select the kind of output desired"),
+        cl::values(clEnumValN(DumpAST, "ast", "output the AST dump")
+
     )
+
 );
 
 
 /// Returns a Toy AST resulting from parsing the file or a nullptr on error.
-std::unique_ptr<toy::ModuleAST> parseInputFile(llvm::StringRef filename) {
+std::unique_ptr<toy::ModuleAst> parseInputFile(llvm::StringRef filename) {
     
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr =
         llvm::MemoryBuffer::getFileOrSTDIN(filename);
     
     if (std::error_code ec = fileOrErr.getError()) {
+
         llvm::errs() << "Could not open input file: " << ec.message() << "\n";
         return nullptr;
+    
     }
 
     auto buffer = fileOrErr.get()->getBuffer();
+
     LexerBuffer lexer(buffer.begin(), buffer.end(), std::string(filename));
+    
     Parser parser(lexer);
     
     return parser.parseModule();
@@ -82,10 +90,10 @@ int main(int argc, char **argv) {
     
     // Parse code file (i.e. code into LLVM module)
     // Lexer & Parser are called inside
-    auto moduleAST = parseInputFile(inputFilename);
+    auto moduleAst = parseInputFile(inputFilename);
     
 
-    if (!moduleAST)
+    if (!moduleAst)
         return 1;
 
 
@@ -93,7 +101,7 @@ int main(int argc, char **argv) {
 
         // Then Dump the AST, if -emit=ast argument is passed
         case Action::DumpAST:
-            dump(*moduleAST);
+            dump(*moduleAst);
             return 0;
         
         default:

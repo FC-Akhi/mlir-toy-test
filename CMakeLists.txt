@@ -61,6 +61,4 @@ add_subdirectory(standalone-translate)
 # ---- Custom CMake Utility Functions -----
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/MyCustomCmakeUtils.cmake")
 
-
-# ==== Add "tools/" dir which contains "toy-compiler" ====
 add_subdirectory(tools)
