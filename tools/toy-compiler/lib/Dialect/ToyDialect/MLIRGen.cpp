@@ -12,36 +12,35 @@
 ///===--------------------------------------------------------------------------------------------------------===///
 
 
-/// This is for mlir namespace. Check this header file to understand
+/// This header file is required for using the Toy language's MLIR dialect
 #include "Dialect/ToyDialect/MLIRGen.h"
 
-/// This header is for AST
+
+/// This header file provides the definitions for the abstract syntax tree (AST) of the Toy language
 #include "toy-analysis-parser/AST.h"
 
 
-/// This header is for 'mlir::OpBuilder
+/// This header file is necessary for constructing MLIR operations easily
 #include "mlir/IR/Builders.h"
 
 
-/// This header is for mlir::ModuleOp
+/// This header file includes definitions for creating and manipulating MLIR modules
 #include "mlir/IR/BuiltinOps.h"     // Without it, this file compilation fails
 
 
-/// This header is for mlir::verify
+/// This header file is used for verifying the correctness of the MLIR module
 #include "mlir/IR/Verifier.h"     // Without it, this file compilation fails
 
 
-/// Declaration of toy namespace. Defination is at the end of the script
+/// We're using the 'toy' namespace which contains definitions related to the Toy language
 using namespace toy;
 
 
 namespace {
 
 
-    /// Implementation of a simple MLIR emission from the Toy AST.
-    /// This will emit operations that are specific to the Toy language, preserving
-    /// the semantics of the language and (hopefully) allow to perform accurate
-    /// analysis and transformation based on these high level semantics.
+    /// MLIRGenImpl is a class that converts the Toy AST to MLIR, 
+    /// making it possible to analyze and transform the Toy program within the MLIR framework
     class MLIRGenImpl {
 
 
@@ -66,9 +65,10 @@ namespace {
             theModule = mlir::ModuleOp::create(builder.getUnknownLoc());
 
 
-            /// Verifying the module
+            /// Check the newly created module for structural correctness
             if (failed(mlir::verify(theModule))) {
 
+                /// If verification fails, report an error on the module
                 theModule.emitError("module verification error");
 
                 return nullptr;
@@ -76,7 +76,7 @@ namespace {
             }
 
 
-            /// Returning the module
+            /// Successfully return the generated MLIR module
             return theModule;
 
 
@@ -86,13 +86,11 @@ namespace {
     private:
 
 
-        /// A "module" matches a Toy source file: containing a list of functions
+        /// Holds the generated MLIR module, corresponding to a source file in the Toy language
         mlir::ModuleOp theModule;
 
 
-        /// The builder is a helper class to create IR inside a function. The builder
-        /// is stateful, in particular it keeps an "insertion point": this is where
-        /// the next operations will be introduced.
+        /// A utility to help build MLIR operations.
         mlir::OpBuilder builder;
 
 
@@ -105,20 +103,19 @@ namespace {
 
 /// namespace toy where the public API for codegen will be present
 namespace toy {
-
-    /// The public API for codegen
+    
+    /// Public API for generating MLIR from the Toy AST. This function bridges the Toy language and the MLIR framework
     mlir::OwningOpRef<mlir::ModuleOp> mlirGen(mlir::MLIRContext &context, ModuleAst &moduleAst) {
-
-        // Step 1: Create an instance of MLIRGenImpl with context
+        
+        /// Create a generator instance with the given context
         MLIRGenImpl mlirGenerator = MLIRGenImpl(context);
-        
-        // Step 2: Call the mlirGen method on the instance with moduleAst
+
+        /// Generate MLIR for the given AST
         auto generatedIR = mlirGenerator.mlirGen(moduleAst);
-        
-        // Step 3: Return the result of the mlirGen method call
+
+        /// Return the generated MLIR
         return generatedIR;
-
+    
     }
-
 
 } /// namespace toy ends here
