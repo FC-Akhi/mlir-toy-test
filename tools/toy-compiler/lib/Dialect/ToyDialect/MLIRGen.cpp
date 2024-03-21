@@ -109,7 +109,14 @@ namespace toy {
     /// The public API for codegen
     mlir::OwningOpRef<mlir::ModuleOp> mlirGen(mlir::MLIRContext &context, ModuleAst &moduleAst) {
 
-        return MLIRGenImpl(context).mlirGen(moduleAst);
+        // Step 1: Create an instance of MLIRGenImpl with context
+        MLIRGenImpl mlirGenerator = MLIRGenImpl(context);
+        
+        // Step 2: Call the mlirGen method on the instance with moduleAst
+        auto generatedIR = mlirGenerator.mlirGen(moduleAst);
+        
+        // Step 3: Return the result of the mlirGen method call
+        return generatedIR;
 
     }
 
