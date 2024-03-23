@@ -46,7 +46,6 @@ using namespace toy;
 
 
 
-
 namespace {
 
 
@@ -55,9 +54,7 @@ namespace {
     class MLIRGenImpl {
 
 
-
     public:
-
 
 
         /// @brief : Prepares for MLIR generation by initializing a builder with the provided context
