@@ -92,15 +92,13 @@ test/Examples/Toy/Ch2/codegen.toy
 # Expected output
 ```sh
 module {
-  toy.func @multiply_transpose(%arg0: tensor<*xf64>, %arg1: tensor<*xf64>, %arg2: tensor<*xf64>) -> tensor<*xf64> {
+  toy.func @multiply_transpose(%arg0: tensor<*xf64>, %arg1: tensor<*xf64>) -> tensor<*xf64> {
     %0 = toy.constant dense<0.000000e+00> : tensor<f64>
     toy.return %0 : tensor<f64>
   }
-  toy.func @main() -> tensor<*xf64> {
+  toy.func @main() {
     %0 = toy.constant dense<5.000000e+00> : tensor<f64>
-    %1 = toy.constant dense<6.000000e+00> : tensor<f64>
-    %2 = toy.constant dense<0.000000e+00> : tensor<f64>
-    toy.return %2 : tensor<f64>
+    toy.return
   }
 }
 ```
