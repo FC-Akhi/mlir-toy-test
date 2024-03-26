@@ -16,6 +16,7 @@ Date: Tue Jan 2 12:06:27 2024 +0100
 - `ch-2-version-3-mlir-gen`: Setting up the mlir gen for module & function prototype with entry block having dummy function return in MLIRGen.cpp. No changes in `tools/toy-compiler/toy-compiler.cpp`
 - `ch-2-version-4-mlir-gen`: Setting up the mlir gen for module, function prototype, function return & variable declaration and value assignment in MLIRGen.cpp. No changes in `tools/toy-compiler/toy-compiler.cpp`
 - `ch-2-version-5-mlir-gen`: Setting up the mlir gen for module, function prototype, function return, variable declaration, value assignment & binary operation like add and multiply in MLIRGen.cpp. No changes in `tools/toy-compiler/toy-compiler.cpp`
+- `ch-2-version-6-mlir-gen`: Setting up the mlir gen for module, function prototype, function return, variable declaration, value assignment, binary operation like add and multiply & also function callee in MLIRGen.cpp. No changes in `tools/toy-compiler/toy-compiler.cpp`
 - More coming....
 
 
@@ -94,15 +95,19 @@ test/Examples/Toy/Ch2/codegen.toy
 ```sh
 module {
   toy.func @multiply_transpose(%arg0: tensor<*xf64>, %arg1: tensor<*xf64>) -> tensor<*xf64> {
-    %0 = toy.constant dense<0.000000e+00> : tensor<f64>
-    toy.return %0 : tensor<f64>
+    %0 = toy.transpose(%arg0 : tensor<*xf64>) to tensor<*xf64>
+    %1 = toy.transpose(%arg1 : tensor<*xf64>) to tensor<*xf64>
+    %2 = toy.mul %0, %1 : tensor<*xf64>
+    toy.return %2 : tensor<*xf64>
   }
   toy.func @main() -> tensor<*xf64> {
     %0 = toy.constant dense<5.000000e+00> : tensor<f64>
     %1 = toy.constant dense<6.000000e+00> : tensor<f64>
     %2 = toy.mul %0, %1 : (tensor<f64>, tensor<f64>) -> tensor<*xf64>
-    %3 = toy.constant dense<0.000000e+00> : tensor<f64>
-    toy.return %3 : tensor<f64>
+    %3 = toy.generic_call @multiply_transpose(%0, %1) : (tensor<f64>, tensor<f64>) -> tensor<*xf64>
+    toy.print %3 : tensor<*xf64>
+    %4 = toy.constant dense<0.000000e+00> : tensor<f64>
+    toy.return %4 : tensor<f64>
   }
 }
 ```
