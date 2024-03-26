@@ -1,0 +1,24 @@
+# RUN: toyc-ch2 %s -emit=mlir 2>&1 | FileCheck %s
+
+# User defined generic function that operates on unknown shaped arguments
+def multiply_transpose(a, b) {
+  return transpose(a) * transpose(b);
+}
+
+def main() {
+
+  var a = 5;
+  var b = 6;
+
+  var c = a * b;
+
+  var d = multiply_transpose(a, b); # User defined function call
+
+  print(d); # builtin function call
+
+  return 0;
+  
+}
+
+
+
